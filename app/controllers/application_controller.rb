@@ -4,4 +4,11 @@ class ApplicationController < ActionController::Base
 
   # Changes to the importmap will invalidate the etag for HTML responses
   stale_when_importmap_changes
+
+  private
+
+  # Redirect to the login page after logging out
+  def after_sign_out_path_for(resource_or_scope)
+    new_user_session_path
+  end
 end

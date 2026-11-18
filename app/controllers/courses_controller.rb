@@ -1,7 +1,7 @@
 class CoursesController < ApplicationController
-  before_action :authenticate_user!  # To make sure we force log ins
-
+  before_action :authenticate_user! # Ensure user is logged in
   before_action :set_course, only: %i[ show edit update destroy ]
+  before_action :require_teacher!, only: %i[ new create edit update destroy ]
 
   # GET /courses or /courses.json
   def index
@@ -14,7 +14,7 @@ class CoursesController < ApplicationController
 
   # GET /courses/new
   def new
-    @course = Course.new
+    @course = current_user.courses.build
   end
 
   # GET /courses/1/edit
@@ -23,7 +23,7 @@ class CoursesController < ApplicationController
 
   # POST /courses or /courses.json
   def create
-    @course = Course.new(course_params)
+    @course = current_user.courses.build(course_params)
 
     respond_to do |format|
       if @course.save
@@ -60,13 +60,21 @@ class CoursesController < ApplicationController
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_course
-      @course = Course.find(params.expect(:id))
-    end
 
-    # Only allow a list of trusted parameters through.
-    def course_params
-      params.expect(course: [ :title, :description ])
+  # Use callbacks to share common setup or constraints between actions.
+  def set_course
+    @course = Course.find(params.expect(:id))
+  end
+
+  # Only allow a list of trusted parameters through.
+  def course_params
+    params.expect(course: [ :title, :description ])
+  end
+
+  # Restrict state-modifying actions to teachers only
+  def require_teacher!
+    unless current_user.can_manage_courses?
+      redirect_to courses_path, alert: "Access denied. Only teachers can manage courses."
     end
+  end
 end

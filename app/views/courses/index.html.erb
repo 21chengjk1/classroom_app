@@ -13,4 +13,6 @@
   <% end %>
 </div>
 
-<%= link_to "New course", new_course_path %>
+<% if current_user.teacher? %>
+  <%= link_to "New course", new_course_path %>
+<% end %>
