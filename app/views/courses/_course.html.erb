@@ -9,4 +9,8 @@
     <%= course.description %>
   </div>
 
+  <div>
+    <strong>Instructor:</strong>
+    <%= course.user&.email || "Unknown" %>
+  </div>
 </div>

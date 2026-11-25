@@ -1,11 +1,12 @@
 class CoursesController < ApplicationController
   before_action :authenticate_user! # Ensure user is logged in
   before_action :set_course, only: %i[ show edit update destroy ]
-  before_action :require_teacher!, only: %i[ new create edit update destroy ]
+  before_action :require_teacher!, only: %i[ new create ]
+  before_action :require_course_owner!, only: %i[ edit update destroy ]
 
   # GET /courses or /courses.json
   def index
-    @courses = Course.all
+    @courses = Course.includes(:user).all
   end
 
   # GET /courses/1 or /courses/1.json
@@ -71,10 +72,17 @@ class CoursesController < ApplicationController
     params.expect(course: [ :title, :description ])
   end
 
-  # Restrict state-modifying actions to teachers only
+  # Restrict course creation to teachers only
   def require_teacher!
     unless current_user.can_manage_courses?
       redirect_to courses_path, alert: "Access denied. Only teachers can manage courses."
+    end
+  end
+
+  # Restrict editing and deleting to the course owner
+  def require_course_owner!
+    unless current_user.can_modify_course?(@course)
+      redirect_to courses_path, alert: "Access denied. You can only manage your own courses."
     end
   end
 end

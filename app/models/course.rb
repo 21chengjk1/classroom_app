@@ -1,5 +1,9 @@
 class Course < ApplicationRecord
-    belongs_to :user
+  belongs_to :user
 
-    audited
+  audited
+
+  def owned_by?(user)
+    user.present? && user_id == user.id
+  end
 end

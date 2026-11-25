@@ -4,9 +4,10 @@ class User < ApplicationRecord
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable
 
-
   # 0 will be student, 1 will be teacher
   enum :role, { student: 0, teacher: 1 }, default: :student
+
+  has_many :courses, dependent: :destroy
 
   # Explicit RBAC permission queries
   def can_manage_courses?
@@ -17,6 +18,7 @@ class User < ApplicationRecord
     student? || teacher?
   end
 
-  has_many :courses, dependent: :destroy
-  
+  def can_modify_course?(course)
+    can_manage_courses? && course.present? && course.user_id == id
+  end
 end
