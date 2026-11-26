@@ -13,4 +13,11 @@
     <strong>Instructor:</strong>
     <%= course.user&.email || "Unknown" %>
   </div>
+
+  <% if course.owned_by?(current_user) %>
+    <div>
+      <strong>Join Code:</strong>
+      <code><%= course.join_code %></code>
+    </div>
+  <% end %>
 </div>

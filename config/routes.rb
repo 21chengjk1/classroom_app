@@ -12,6 +12,7 @@ Rails.application.routes.draw do
 
       get "me", to: "users#me"
       resources :courses, only: %i[ index show create update destroy ]
+      resources :enrollments, only: %i[ create destroy ], param: :course_id
     end
   end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

@@ -1,12 +1,13 @@
 class CoursesController < ApplicationController
   before_action :authenticate_user! # Ensure user is logged in
   before_action :set_course, only: %i[ show edit update destroy ]
+  before_action :require_course_access!, only: %i[ show ]
   before_action :require_teacher!, only: %i[ new create ]
   before_action :require_course_owner!, only: %i[ edit update destroy ]
 
   # GET /courses or /courses.json
   def index
-    @courses = Course.includes(:user).all
+    @courses = current_user.accessible_courses.includes(:user).order(created_at: :desc)
   end
 
   # GET /courses/1 or /courses/1.json
@@ -70,6 +71,13 @@ class CoursesController < ApplicationController
   # Only allow a list of trusted parameters through.
   def course_params
     params.expect(course: [ :title, :description ])
+  end
+
+  # Restrict viewing a course to its owner or enrolled students
+  def require_course_access!
+    unless current_user.can_view_course?(@course)
+      redirect_to courses_path, alert: "Access denied. You are not enrolled in this course."
+    end
   end
 
   # Restrict course creation to teachers only

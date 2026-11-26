@@ -7,7 +7,7 @@ export interface User {
   can_manage_courses: boolean;
 }
 
-export interface Instructor {
+export interface PersonSummary {
   id: number;
   email: string;
 }
@@ -16,10 +16,13 @@ export interface Course {
   id: number;
   title: string;
   description: string | null;
+  join_code: string | null;
+  student_count: number;
   created_at: string;
   updated_at: string;
-  instructor: Instructor | null;
+  instructor: PersonSummary | null;
   can_modify: boolean;
+  students?: PersonSummary[];
 }
 
 export interface CourseInput {

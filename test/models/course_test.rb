@@ -17,6 +17,11 @@ class CourseTest < ActiveSupport::TestCase
     assert_not @course.owned_by?(nil)
   end
 
+  test "automatically generates a unique 6-character join code on create" do
+    course = Course.create!(title: "History 101", description: "World History", user: @teacher)
+    assert_match(/\A[A-Z0-9]{6}\z/, course.join_code)
+  end
+
   test "creating and updating course creates audit records" do
     course = Course.create!(title: "Audited Course", description: "Testing audits", user: @teacher)
     assert_equal 1, course.audits.count

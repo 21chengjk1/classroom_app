@@ -6,6 +6,7 @@ class Api::V1::CoursesControllerTest < ActionDispatch::IntegrationTest
     @teacher_two = users(:teacher_two)
     @student = users(:student)
     @course = courses(:one)
+    @other_course = courses(:two)
   end
 
   def auth_headers_for(user)
@@ -20,18 +21,26 @@ class Api::V1::CoursesControllerTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
   end
 
-  test "student can list and view courses but cannot create, update, or delete" do
+  test "student only sees enrolled courses and cannot view unenrolled courses" do
     headers = auth_headers_for(@student)
 
     get api_v1_courses_url, headers: headers, as: :json
     assert_response :ok
     courses = JSON.parse(response.body)["courses"]
-    assert_equal 2, courses.length
-    assert courses.none? { |c| c["can_modify"] }
+    assert_equal [ @course.id ], courses.map { |c| c["id"] }
+    assert_nil courses.first["join_code"]
+    assert_equal false, courses.first["can_modify"]
 
     get api_v1_course_url(@course), headers: headers, as: :json
     assert_response :ok
     assert_equal false, JSON.parse(response.body).dig("course", "can_modify")
+
+    get api_v1_course_url(@other_course), headers: headers, as: :json
+    assert_response :forbidden
+  end
+
+  test "student cannot create, update, or delete courses" do
+    headers = auth_headers_for(@student)
 
     assert_no_difference("Course.count") do
       post api_v1_courses_url,
@@ -53,8 +62,14 @@ class Api::V1::CoursesControllerTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
-  test "teacher can create, update, and destroy own course" do
+  test "teacher sees own courses with join code and roster, and can create, update, and destroy" do
     headers = auth_headers_for(@teacher_one)
+
+    get api_v1_course_url(@course), headers: headers, as: :json
+    assert_response :ok
+    course_json = JSON.parse(response.body)["course"]
+    assert_equal @course.join_code, course_json["join_code"]
+    assert_equal [ @student.email ], course_json["students"].map { |s| s["email"] }
 
     assert_difference("Course.count", 1) do
       post api_v1_courses_url,
@@ -65,6 +80,7 @@ class Api::V1::CoursesControllerTest < ActionDispatch::IntegrationTest
     assert_response :created
     created = JSON.parse(response.body)["course"]
     assert_equal "Linear Algebra", created["title"]
+    assert_match(/\A[A-Z0-9]{6}\z/, created["join_code"])
     assert_equal @teacher_one.email, created.dig("instructor", "email")
     assert_equal true, created["can_modify"]
 
@@ -81,12 +97,11 @@ class Api::V1::CoursesControllerTest < ActionDispatch::IntegrationTest
     assert_response :no_content
   end
 
-  test "teacher cannot update or destroy another teacher's course" do
+  test "teacher cannot view, update, or destroy another teacher's course unless enrolled" do
     headers = auth_headers_for(@teacher_two)
 
     get api_v1_course_url(@course), headers: headers, as: :json
-    assert_response :ok
-    assert_equal false, JSON.parse(response.body).dig("course", "can_modify")
+    assert_response :forbidden
 
     patch api_v1_course_url(@course),
       headers: headers,

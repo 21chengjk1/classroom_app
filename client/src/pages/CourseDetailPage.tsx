@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ApiError, deleteCourse, fetchCourse } from "../api/client";
+import {
+  ApiError,
+  deleteCourse,
+  fetchCourse,
+  unenrollFromCourse,
+} from "../api/client";
 import type { Course } from "../types/api";
 
 export function CourseDetailPage() {
@@ -11,6 +16,8 @@ export function CourseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -48,6 +55,27 @@ export function CourseDetailPage() {
     }
   };
 
+  const handleLeave = async () => {
+    if (!course || !window.confirm(`Leave "${course.title}"?`)) return;
+    setLeaving(true);
+    setError(null);
+
+    try {
+      await unenrollFromCourse(course.id);
+      navigate("/courses");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to leave course.");
+      setLeaving(false);
+    }
+  };
+
+  const handleCopyCode = async () => {
+    if (!course?.join_code) return;
+    await navigator.clipboard.writeText(course.join_code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   if (loading) {
     return <p className="status-text">Loading course...</p>;
   }
@@ -77,27 +105,67 @@ export function CourseDetailPage() {
           </p>
         </div>
 
-        {course.can_modify && (
-          <div className="detail-actions">
-            <Link to={`/courses/${course.id}/edit`} className="btn btn-secondary">
-              Edit
-            </Link>
+        <div className="detail-actions">
+          {course.can_modify ? (
+            <>
+              <Link to={`/courses/${course.id}/edit`} className="btn btn-secondary">
+                Edit
+              </Link>
+              <button
+                type="button"
+                className="btn btn-danger"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </>
+          ) : (
             <button
               type="button"
-              className="btn btn-danger"
-              onClick={handleDelete}
-              disabled={deleting}
+              className="btn btn-secondary"
+              onClick={handleLeave}
+              disabled={leaving}
             >
-              {deleting ? "Deleting..." : "Delete"}
+              {leaving ? "Leaving..." : "Leave course"}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      {course.join_code && (
+        <div className="join-code-box">
+          <div>
+            <span className="muted">Class join code</span>
+            <div className="join-code-value">{course.join_code}</div>
+          </div>
+          <button type="button" className="btn btn-secondary" onClick={handleCopyCode}>
+            {copied ? "Copied!" : "Copy code"}
+          </button>
+        </div>
+      )}
 
       <div className="detail-body">
         <h3>Description</h3>
         <p>{course.description || "No description provided."}</p>
       </div>
+
+      {course.students && (
+        <div className="roster-section">
+          <h3>Enrolled Students ({course.students.length})</h3>
+          {course.students.length === 0 ? (
+            <p className="muted">
+              No students enrolled yet. Share the join code above to invite students.
+            </p>
+          ) : (
+            <ul className="roster-list">
+              {course.students.map((student) => (
+                <li key={student.id}>{student.email}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </section>
   );
 }

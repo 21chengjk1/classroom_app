@@ -2,8 +2,10 @@ one:
   title: Physics 101
   description: Introduction to Physics
   user: teacher_one
+  join_code: PHYS01
 
 two:
   title: Chemistry 101
   description: Introduction to Chemistry
   user: teacher_two
+  join_code: CHEM01

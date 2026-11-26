@@ -11,6 +11,8 @@ class User < ApplicationRecord
   enum :role, { student: 0, teacher: 1 }, default: :student
 
   has_many :courses, dependent: :destroy
+  has_many :enrollments, dependent: :destroy
+  has_many :enrolled_courses, through: :enrollments, source: :course
 
   # Explicit RBAC permission queries
   def can_manage_courses?
@@ -21,7 +23,19 @@ class User < ApplicationRecord
     student? || teacher?
   end
 
+  def enrolled_in?(course)
+    course.present? && enrollments.exists?(course_id: course.id)
+  end
+
+  def can_view_course?(course)
+    course.present? && (course.owned_by?(self) || enrolled_in?(course))
+  end
+
   def can_modify_course?(course)
     can_manage_courses? && course.present? && course.user_id == id
+  end
+
+  def accessible_courses
+    Course.where(id: courses.select(:id)).or(Course.where(id: enrolled_courses.select(:id)))
   end
 end

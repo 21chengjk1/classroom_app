@@ -40,10 +40,17 @@ class CoursesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  test "student can view course show" do
+  test "student can view enrolled course show" do
     sign_in @student
     get course_url(@course)
     assert_response :success
+  end
+
+  test "student cannot view unenrolled course show" do
+    sign_in @student
+    get course_url(courses(:two))
+    assert_redirected_to courses_url
+    assert_equal "Access denied. You are not enrolled in this course.", flash[:alert]
   end
 
   test "student cannot get new course page" do

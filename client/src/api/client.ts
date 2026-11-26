@@ -153,3 +153,15 @@ export async function updateCourse(
 export async function deleteCourse(id: number | string): Promise<void> {
   await apiRequest<void>(`/courses/${id}`, { method: "DELETE" });
 }
+
+export async function joinCourseByCode(joinCode: string): Promise<Course> {
+  const { data } = await apiRequest<{ course: Course }>("/enrollments", {
+    method: "POST",
+    body: JSON.stringify({ join_code: joinCode }),
+  });
+  return data.course;
+}
+
+export async function unenrollFromCourse(courseId: number | string): Promise<void> {
+  await apiRequest<void>(`/enrollments/${courseId}`, { method: "DELETE" });
+}

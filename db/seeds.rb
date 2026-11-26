@@ -12,12 +12,15 @@ student = User.find_or_create_by!(email: "student@example.com") do |u|
   u.role = :student
 end
 
-Course.find_or_create_by!(title: "Introduction to Computer Science", user: teacher) do |c|
+cs_course = Course.find_or_create_by!(title: "Introduction to Computer Science", user: teacher) do |c|
   c.description = "Learn the basics of programming, algorithms, and web development."
 end
 
-Course.find_or_create_by!(title: "Calculus I", user: teacher) do |c|
+calc_course = Course.find_or_create_by!(title: "Calculus I", user: teacher) do |c|
   c.description = "Differential and integral calculus with applications."
 end
 
-puts "Seeded #{User.count} users and #{Course.count} courses."
+Enrollment.find_or_create_by!(user: student, course: cs_course)
+
+puts "Seeded #{User.count} users, #{Course.count} courses, and #{Enrollment.count} enrollments."
+puts "Join codes -> #{cs_course.title}: #{cs_course.join_code} | #{calc_course.title}: #{calc_course.join_code}"
