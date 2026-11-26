@@ -1,6 +1,19 @@
 Rails.application.routes.draw do
   devise_for :users
   resources :courses
+
+  namespace :api, defaults: { format: :json } do
+    namespace :v1 do
+      devise_scope :user do
+        post "login", to: "sessions#create"
+        delete "logout", to: "sessions#destroy"
+        post "signup", to: "registrations#create"
+      end
+
+      get "me", to: "users#me"
+      resources :courses, only: %i[ index show create update destroy ]
+    end
+  end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

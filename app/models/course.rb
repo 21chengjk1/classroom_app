@@ -1,6 +1,8 @@
 class Course < ApplicationRecord
   belongs_to :user
 
+  validates :title, presence: true
+
   audited
 
   def owned_by?(user)
